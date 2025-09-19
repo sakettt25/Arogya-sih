@@ -8,48 +8,64 @@ import { Github, Linkedin, Mail, User, UserCircle } from "lucide-react"
 
 const teamMembers = [
   {
-    name: "Siddharth Mishra",
-    role: "AI Developer",
-    bio: "Siddharth is a skilled AI developer with expertise in deep learning and natural language processing. He specializes in building AI-driven solutions for healthcare and automation.",
+    name: "Saket Saurav",
+    role: "Web Developer",
+    bio: "Saket is a skilled web developer with expertise in building responsive and user-friendly web applications. He specializes in front-end development and has a passion for creating seamless user experiences.",
     links: {
-      github: "https://github.com/Sid3503",
-      linkedin: "https://www.linkedin.com/in/siddharth-mishra-0a5227228/",
-      email: "mishrasiddharth072@gmail.com",
+      github: "https://github.com/Sakettt25",
+      linkedin: "https://www.linkedin.com/in/sakettt25/",
+      email: "saketsauravcse@gmail.com.com",
     },
   },
   {
-    name: "Manoday Kadam",
-    role: "AI Developer & Cloud Specialist",
-    bio: "Manoday is an AI developer with a strong background in cloud computing and scalable AI solutions. He excels in deploying AI models on cloud platforms for efficient real-world applications.",
+    name: "Saket Saurav",
+    role: "Web Developer",
+    bio: "Saket is a skilled web developer with expertise in building responsive and user-friendly web applications. He specializes in front-end development and has a passion for creating seamless user experiences.",
     links: {
-      github: "https://github.com/Manoday10",
-      linkedin: "https://www.linkedin.com/in/manoday-kadam-3b1a74268/",
-      email: "manodaykadam105@gmail.com",
+      github: "https://github.com/Sakettt25",
+      linkedin: "https://www.linkedin.com/in/sakettt25/",
+      email: "saketsauravcse@gmail.com.com",
     },
   },
   {
-    name: "Prachiti Palande",
-    role: "UI/UX Specialist",
-    bio: "Prachiti is a creative UI/UX designer who focuses on crafting intuitive and engaging user experiences. She ensures that AI-powered applications are accessible and user-friendly.",
+    name: "Saket Saurav",
+    role: "Web Developer",
+    bio: "Saket is a skilled web developer with expertise in building responsive and user-friendly web applications. He specializes in front-end development and has a passion for creating seamless user experiences.",
     links: {
-      github: "https://github.com/mikejohnson",
-      linkedin: "https://linkedin.com/in/mikejohnson",
-      email: "prachitipalande191@gmail.com",
+      github: "https://github.com/Sakettt25",
+      linkedin: "https://www.linkedin.com/in/sakettt25/",
+      email: "saketsauravcse@gmail.com.com",
     },
   },
   {
-    name: "Priyadarshini Chavan",
-    role: "Frontend Designer & ML Specialist",
-    bio: "Priyadarshini is a frontend designer with a strong grasp of machine learning. She bridges the gap between AI models and user interfaces, ensuring seamless integration and performance.",
+    name: "Saket Saurav",
+    role: "Web Developer",
+    bio: "Saket is a skilled web developer with expertise in building responsive and user-friendly web applications. He specializes in front-end development and has a passion for creating seamless user experiences.",
     links: {
-      github: "https://github.com/Priyadarshini75",
-      linkedin: "https://www.linkedin.com/in/priyadarshinii/",
-      email: "priyadarshinichavan75@gmail.com",
+      github: "https://github.com/Sakettt25",
+      linkedin: "https://www.linkedin.com/in/sakettt25/",
+      email: "saketsauravcse@gmail.com.com",
     },
   },
 ]
 
-const TeamMember = ({ member, index }) => {
+type TeamMemberType = {
+  name: string;
+  role: string;
+  bio: string;
+  links: {
+    github: string;
+    linkedin: string;
+    email: string;
+  };
+};
+
+interface TeamMemberProps {
+  member: TeamMemberType;
+  index: number;
+}
+
+const TeamMember = ({ member, index }: TeamMemberProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 50 }}

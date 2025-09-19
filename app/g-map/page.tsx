@@ -1,10 +1,33 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
+import L from "leaflet"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 
-const GOOGLE_MAPS_API_KEY = ""
+const GEOAPIFY_API_KEY = "654ee2fb81ac4e598a626a3edd9a5860"
+
+// Facility type icons mapping
+const facilityIcons = {
+  all: "🏥",
+  public: "🏛️",
+  private: "🏨",
+  clinic: "👨‍⚕️",
+  medical: "💊"
+}
+
+// Healthcare facility type icons based on category
+const getHealthcareFacilityIcon = (place: any) => {
+  const name = place.name?.toLowerCase() || ''
+  const vicinity = place.vicinity?.toLowerCase() || ''
+  
+  if (name.includes('hospital') || vicinity.includes('hospital')) return '🏥'
+  if (name.includes('clinic') || vicinity.includes('clinic')) return '🏪'
+  if (name.includes('pharmacy') || name.includes('medical store')) return '💊'
+  if (name.includes('eye') || name.includes('dental') || name.includes('dentist')) return '👁️'
+  if (name.includes('primary health') || name.includes('phc')) return '🏛️'
+  return '🏥' // default hospital icon
+}
 
 declare global {
   interface Window {
@@ -17,18 +40,16 @@ export default function GMap() {
   const [places, setPlaces] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
   const [selectedFacility, setSelectedFacility] = useState<string>("all")
-  const [isMounted, setIsMounted] = useState(false)
+  const mapRef = useRef<HTMLDivElement>(null)
+  const leafletMap = useRef<any>(null)
 
   useEffect(() => {
-    setIsMounted(true)
-
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const lat = position.coords.latitude
           const lng = position.coords.longitude
           setLocation({ lat, lng })
-          fetchNearbyPlaces(lat, lng, selectedFacility)
         },
         () => setError("Location access denied"),
         { enableHighAccuracy: true },
@@ -36,35 +57,114 @@ export default function GMap() {
     } else {
       setError("Geolocation is not supported")
     }
-  }, [selectedFacility])
+  }, [])
+
+  useEffect(() => {
+    if (!location) return
+    fetchNearbyPlaces(location.lat, location.lng, selectedFacility)
+    // Render map
+    if (mapRef.current) {
+      // Clean up existing map instance properly
+      if (leafletMap.current) {
+        try {
+          leafletMap.current.remove()
+        } catch (error) {
+          console.warn('Error removing map:', error)
+        }
+        leafletMap.current = null
+      }
+      // Reset map container to avoid reuse error
+      mapRef.current.innerHTML = ""
+      leafletMap.current = L.map(mapRef.current).setView([location.lat, location.lng], 14)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(leafletMap.current)
+    }
+    return () => {
+      if (leafletMap.current) {
+        try {
+          leafletMap.current.remove()
+        } catch (error) {
+          console.warn('Error removing map in cleanup:', error)
+        }
+        leafletMap.current = null
+      }
+    }
+  }, [location, selectedFacility])
+
+  // Filtered places based on filterTerm
+  const filteredPlaces = places
 
   const fetchNearbyPlaces = async (lat: number, lng: number, facilityType: string) => {
     try {
-      const response = await fetch(`/api/health-centers?lat=${lat}&lng=${lng}&type=${facilityType}`)
+      // Map facilityType to Geoapify categories - different for each type
+      let categories = "healthcare.doctor,healthcare.hospital,healthcare.clinic,healthcare.pharmacy,healthcare.dentist,healthcare"
+      if (facilityType === "public") categories = "healthcare.hospital,healthcare.clinic,healthcare"
+      if (facilityType === "private") categories = "healthcare.clinic,healthcare.doctor,healthcare.dentist,healthcare"
+      if (facilityType === "clinic") categories = "healthcare.clinic,healthcare.doctor,healthcare.dentist"
+      if (facilityType === "medical") categories = "healthcare.pharmacy,healthcare.hospital,healthcare.clinic,healthcare.doctor"
+
+      const url = `https://api.geoapify.com/v2/places?categories=${categories}&filter=circle:${lng},${lat},10000&bias=proximity:${lng},${lat}&limit=50&apiKey=${GEOAPIFY_API_KEY}`
+      const response = await fetch(url)
       const data = await response.json()
-
-      interface Place {
-        name: string
-        vicinity: string
-        lat: number
-        lng: number
-        website?: string
+      
+      console.log('API Response for', facilityType, ':', data) // Debug log
+      
+      if (!data.features || data.features.length === 0) {
+        console.warn('No facilities found for', facilityType)
+        // Try with broader categories if no results
+        const broadUrl = `https://api.geoapify.com/v2/places?categories=healthcare&filter=circle:${lng},${lat},15000&bias=proximity:${lng},${lat}&limit=50&apiKey=${GEOAPIFY_API_KEY}`
+        const broadResponse = await fetch(broadUrl)
+        const broadData = await broadResponse.json()
+        
+        if (!broadData.features || broadData.features.length === 0) {
+          setPlaces([])
+          return
+        }
+        
+        const sortedPlaces = broadData.features.map((place: any) => {
+          const props = place.properties
+          return {
+            name: props.name || props.address_line1 || "Healthcare Facility",
+            vicinity: props.address_line2 || props.formatted,
+            lat: place.geometry.coordinates[1],
+            lng: place.geometry.coordinates[0],
+            website: props.website,
+            distance: getDistance(lat, lng, place.geometry.coordinates[1], place.geometry.coordinates[0]),
+            mapsLink: `https://www.openstreetmap.org/?mlat=${place.geometry.coordinates[1]}&mlon=${place.geometry.coordinates[0]}#map=18/${place.geometry.coordinates[1]}/${place.geometry.coordinates[0]}`
+          }
+        }).sort((a: any, b: any) => a.distance - b.distance)
+        setPlaces(sortedPlaces)
+        // Add markers to map
+        if (leafletMap.current) {
+          sortedPlaces.forEach((place: any) => {
+            const marker = L.marker([place.lat, place.lng]).addTo(leafletMap.current)
+            marker.bindPopup(`<b>${place.name}</b><br>${place.vicinity}`)
+          })
+        }
+        return
       }
-
-      interface SortedPlace extends Place {
-        distance: number
-        mapsLink: string
-      }
-
-      const sortedPlaces: SortedPlace[] = (data.results as Place[])
-        .map((place: Place) => ({
-          ...place,
-          distance: getDistance(lat, lng, place.lat, place.lng),
-          mapsLink: `https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}`,
-        }))
-        .sort((a, b) => a.distance - b.distance)
-
+      
+      const sortedPlaces = data.features.map((place: any) => {
+        const props = place.properties
+        return {
+          name: props.name || props.address_line1 || "Healthcare Facility",
+          vicinity: props.address_line2 || props.formatted,
+          lat: place.geometry.coordinates[1],
+          lng: place.geometry.coordinates[0],
+          website: props.website,
+          distance: getDistance(lat, lng, place.geometry.coordinates[1], place.geometry.coordinates[0]),
+          mapsLink: `https://www.openstreetmap.org/?mlat=${place.geometry.coordinates[1]}&mlon=${place.geometry.coordinates[0]}#map=18/${place.geometry.coordinates[1]}/${place.geometry.coordinates[0]}`
+        }
+      }).sort((a: any, b: any) => a.distance - b.distance)
       setPlaces(sortedPlaces)
+      // Add markers to map
+      if (leafletMap.current) {
+        sortedPlaces.forEach((place: any) => {
+          const marker = L.marker([place.lat, place.lng]).addTo(leafletMap.current)
+          marker.bindPopup(`<b>${place.name}</b><br>${place.vicinity}`)
+        })
+      }
     } catch (error) {
       setError("Failed to fetch nearby places. Please try again.")
       console.error("Error fetching places:", error)
@@ -103,34 +203,23 @@ export default function GMap() {
           onChange={(e) => setSelectedFacility(e.target.value)}
           className="p-2 border border-gray-700 rounded-lg bg-black text-white"
         >
-          <option value="all">All Medical Facilities</option>
-          <option value="public">Public Health Center/Govt Hospitals</option>
-          <option value="private">Private Health Centers</option>
-          <option value="clinic">Doctor's Clinic</option>
-          <option value="medical">Medical Facilities</option>
+          <option value="all">{facilityIcons.all} All Medical Facilities</option>
+          <option value="public">{facilityIcons.all} Public Health Center/Govt Hospitals</option>
+          <option value="private">{facilityIcons.private} Private Health Centers</option>
+          <option value="clinic">{facilityIcons.clinic} Doctor's Clinic</option>
+          <option value="medical">{facilityIcons.medical} Medical Facilities</option>
         </select>
       </div>
 
       {/* Update the map and places list for better responsiveness */}
-      <div className="flex flex-col md:flex-row w-full max-w-7xl mt-4 gap-4 sm:gap-6">
+      <div className="flex flex-row w-full max-w-7xl mt-4 gap-4 sm:gap-6">
         {/* Map Section (Left) */}
-        {isMounted && location && (
-          <div className="w-full md:w-[55%] h-[350px] sm:h-[450px] md:h-[550px] rounded-lg overflow-hidden shadow-lg">
-            <iframe
-              width="100%"
-              height="100%"
-              title="Healthcare facilities map"
-              className="rounded-lg border border-gray-700 bg-black"
-              loading="lazy"
-              allowFullScreen
-              referrerPolicy="no-referrer-when-downgrade"
-              src={`https://www.google.com/maps/embed/v1/search?key=${GOOGLE_MAPS_API_KEY}&q=hospital+OR+clinic+OR+doctor+OR+medical+center${selectedFacility !== "all" ? "+" + selectedFacility : ""}&center=${location.lat},${location.lng}&zoom=14`}
-            ></iframe>
-          </div>
-        )}
+        <div className="w-[55%] h-[350px] sm:h-[450px] md:h-[550px] rounded-lg overflow-hidden shadow-lg">
+          <div ref={mapRef} style={{ width: "100%", height: "100%" }} />
+        </div>
 
-        {/* Places List (Right) */}
-        <div className="w-full md:w-[45%] h-[350px] sm:h-[450px] md:h-[550px] overflow-y-auto custom-scrollbar">
+        {/* Places List (Right) - Always visible */}
+        <div className="w-[45%] h-[350px] sm:h-[450px] md:h-[550px] overflow-y-auto custom-scrollbar">
           <ul className="space-y-3 sm:space-y-4 p-2 sm:p-4">
             {places.map((place, index) => (
               <li
@@ -138,7 +227,10 @@ export default function GMap() {
                 className="border border-gray-700 p-3 sm:p-5 rounded-lg bg-black shadow-lg hover:shadow-xl transition-all"
               >
                 <div className="flex flex-col">
-                  <strong className="text-base sm:text-lg md:text-xl font-semibold text-blue-400">{place.name}</strong>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">{getHealthcareFacilityIcon(place)}</span>
+                    <strong className="text-base sm:text-lg md:text-xl font-semibold text-blue-400">{place.name}</strong>
+                  </div>
                   <p className="text-sm sm:text-base md:text-lg italic text-gray-300">{place.vicinity}</p>
                   <p className="text-xs sm:text-sm text-gray-400">{place.distance.toFixed(2)} km away</p>
 
