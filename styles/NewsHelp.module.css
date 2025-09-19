@@ -1,0 +1,438 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 3.5rem);
+  padding: 4rem 1rem;
+}
+
+/* Wrapper: Responsive Layout */
+.wrapper {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 2rem;
+  width: 90%;
+  max-width: 1200px;
+}
+
+/* Cards: Input & Response Sections */
+.card {
+  flex: 1;
+  background-color: #1a1a1a;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  text-align: left;
+}
+
+/* Input Section */
+.inputCard {
+  max-width: 500px;
+}
+
+.responseCard {
+  max-width: 600px;
+  overflow-y: auto;
+  max-height: 70vh;
+}
+
+.heading {
+  padding-bottom: 1rem;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+/* Input Fields */
+.inputContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  gap: 1rem;
+}
+
+.input,
+.select {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background-color: #222;
+  color: #fff;
+  font-size: 1rem;
+  outline: none;
+}
+
+.select {
+  cursor: pointer;
+}
+
+.input:focus,
+.select:focus {
+  border-color: #4da6ff;
+  box-shadow: 0 0 5px rgba(77, 166, 255, 0.5);
+}
+
+/* Buttons */
+.buttonContainer {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.findButton {
+  width: 100%;
+  max-width: 180px;
+  background-color: #ffffff;
+  color: #000000;
+  font-size: 1rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+}
+
+.findButton:hover {
+  background-color: #b9b9b9;
+}
+
+/* Response Section */
+.responseContainer {
+  width: 100%;
+  overflow-y: auto;
+  max-height: 100%;
+  padding-right: 10px;
+}
+
+.responseBox {
+  padding: 1.5rem;
+  border-radius: 8px;
+  background-color: #292929;
+  border: 1px solid #444;
+  overflow-y: auto;
+}
+
+.responseTitle {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.responseText {
+  font-size: 1rem;
+  color: #ddd;
+  text-align: center;
+}
+
+/* News Details */
+.newsCard {
+  padding: 1.5rem;
+  border-radius: 8px;
+  background-color: #333;
+  border: 1px solid #444;
+  margin-bottom: 1.5rem;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.newsTitle {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.newsDescription {
+  font-size: 0.9rem;
+  color: #bbb;
+  margin-bottom: 1rem;
+  font-style: italic;
+}
+
+.newsContent {
+  font-size: 0.95rem;
+  color: #ddd;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.newsFooter {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.newsSource {
+  font-weight: bold;
+}
+
+.newsDate {
+  font-style: italic;
+}
+
+.newsLink {
+  display: inline-flex;
+  align-items: center;
+  color: #4da6ff;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  text-decoration: none;
+}
+
+.newsLink:hover {
+  text-decoration: underline;
+}
+
+.linkIcon {
+  width: 14px;
+  height: 14px;
+  margin-left: 5px;
+}
+
+.divider {
+  border: none;
+  height: 1px;
+  background-color: #444;
+  margin-top: 1rem;
+}
+
+/* Summary Section */
+.summaryContainer {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #333;
+  border-radius: 8px;
+  border: 1px solid #444;
+}
+
+.summaryTitle {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.summaryContent {
+  color: #ddd;
+  line-height: 1.6;
+}
+
+.summaryLine {
+  margin-bottom: 0.5rem;
+}
+
+/* Loading & Error States */
+.loadingContainer,
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.spinner {
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top: 4px solid #fff;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingText {
+  margin-top: 1rem;
+  color: #ddd;
+  font-size: 1rem;
+}
+
+.errorText {
+  color: #ff6b6b;
+  font-size: 1rem;
+  text-align: center;
+}
+
+/* Back to Home Button */
+.homeButtonContainer {
+  display: flex;
+  justify-content: flex-start;
+  width: 90%;
+  max-width: 1200px;
+  margin: 1rem auto;
+}
+
+.homeButton {
+  width: 150px;
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.homeButton:hover {
+  background-color: #b9b9b9;
+}
+
+/* 🌟 Responsive Styles 🌟 */
+
+/* Tablet (768px and below) */
+@media (max-width: 768px) {
+  .wrapper {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 600px;
+    padding: 1.5rem;
+  }
+
+  .heading {
+    font-size: 1.8rem;
+  }
+
+  .input,
+  .select {
+    font-size: 0.9rem;
+  }
+
+  .findButton {
+    font-size: 0.9rem;
+  }
+
+  .responseCard {
+    max-height: 400px;
+  }
+}
+
+/* Mobile (480px and below) */
+@media (max-width: 480px) {
+  .container {
+    padding: 2rem 1rem;
+  }
+
+  .wrapper {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 100%;
+    padding: 1.2rem;
+  }
+
+  .heading {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+
+  .inputContainer {
+    align-items: center;
+  }
+
+  .input,
+  .select {
+    font-size: 0.85rem;
+    padding: 0.75rem;
+  }
+
+  .buttonContainer {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .findButton {
+    width: 100%;
+    font-size: 0.85rem;
+    padding: 0.75rem;
+  }
+
+  .responseTitle {
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  .responseText {
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  .homeButtonContainer {
+    justify-content: center;
+  }
+
+  .homeButton {
+    width: 100%;
+    font-size: 0.9rem;
+  }
+}
+
+/* Ensure navbar is positioned at the top */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+/* Main content container */
+.container {
+  padding-top: 80px; /* Make space for the fixed navbar */
+}
+
+/* Adjust width of response section */
+.responseCard {
+  width: 80%; /* Adjust the width for a larger response section */
+  margin: 20px auto;
+}
+
+/* Additional styling for the rest of the page */
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.card {
+  width: 100%;
+  padding: 20px;
+  margin: 10px 0;
+}
+
+/* Adjust the width of the input section if necessary */
+.inputCard {
+  width: 80%;
+  margin: 10px auto;
+}
+
+/* Ensure home button and footer stay in place */
+.homeButtonContainer {
+  margin-top: 20px;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+

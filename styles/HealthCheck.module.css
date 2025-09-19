@@ -1,0 +1,150 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 3.5rem);
+  padding: 4rem 1rem;
+}
+
+.card {
+  width: 80%;
+  max-width: 1200px;
+  background-color: #1a1a1a;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.heading {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+.textarea {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background-color: #222;
+  color: #fff;
+  font-size: 1rem;
+  resize: none;
+  min-height: 120px;
+}
+
+.button {
+  width: auto;
+  margin-top: 1rem;
+  background-color: #ffffff;
+  color: #000000;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  text-align: center;
+  transition: background-color 0.3s ease-in-out;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.button:hover {
+  background-color: #b9b9b9;
+}
+
+.responseContainer {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.responseBox {
+  padding: 1.5rem;
+  border-radius: 8px;
+  background-color: #292929;
+  border: 1px solid #444;
+  text-align: left;
+  width: 100%;
+  position: relative;
+}
+
+.responseTitle {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.responseText {
+  font-size: 1rem;
+  color: #ddd;
+}
+
+.buttonContainer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  width: 100%;
+}
+
+.responseBox .button {
+  margin-top: 1rem;
+  align-self: flex-end;
+}
+
+@media (min-width: 768px) {
+  .buttonContainer {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+.healthCheckContainer {
+  /* Add any additional styles for the container here */
+}
+
+.healthCheckContainer ol {
+  counter-reset: item;
+  list-style-type: none;
+}
+
+.healthCheckContainer ol li {
+  counter-increment: item;
+  margin-bottom: 10px;
+  position: relative;
+  padding-left: 2.5em;
+}
+
+.healthCheckContainer ol li::before {
+  content: counter(item) ".";
+  position: absolute;
+  left: 0;
+  width: 2em;
+  text-align: right;
+  color: #4a5568;
+  font-weight: bold;
+}
+
+.numberedList {
+  list-style-type: decimal;
+  list-style-position: inside;
+  padding-left: 1.5em;
+}
+
+.numberedList li {
+  margin-bottom: 0.5em;
+  text-indent: -1.5em;
+  padding-left: 1.5em;
+}
+
+.bulletList {
+  list-style-type: disc;
+  padding-left: 1.5em;
+  margin-top: 0.5em;
+}
+
+.bulletList li {
+  margin-bottom: 0.5em;
+}
+
