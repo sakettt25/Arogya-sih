@@ -11,7 +11,7 @@ import Link from "next/link"
 export default function FindDoctor() {
   const [condition, setCondition] = useState("")
   const [location, setLocation] = useState("")
-  const [apiResponse, setApiResponse] = useState(null)
+  const [apiResponse, setApiResponse] = useState<{ doctors?: string; error?: string } | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -84,7 +84,7 @@ export default function FindDoctor() {
                 {apiResponse.doctors
                   .split("\n\n--------------------------------------------------\n")
                   .map((doctor, index) => {
-                    const doctorInfo = {}
+                    const doctorInfo: { [key: string]: string } = {}
                     doctor.split("\n").forEach((line) => {
                       if (line.includes(": ")) {
                         const [key, value] = line.split(": ")

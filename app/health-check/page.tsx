@@ -78,18 +78,21 @@ export default function HealthCheck() {
     setSummary("")
 
     try {
-      const res = await fetch("http://127.0.0.1:5000/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: input }),
-      })
+      const formData = new FormData();
+      formData.append("user_id", "test_user");
+      formData.append("user_input", input);
 
-      const data = await res.json()
-      setResponse(data.response || "No response available.")
-      setSummary(data.summary || "No detailed response available.")
+      const res = await fetch("https://ayanosenpai123-chatbot.hf.space/chat", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      setResponse(data.response || "No response available.");
+      // setSummary("No detailed response available.");
     } catch (error) {
-      console.error("Error fetching response:", error)
-      setResponse("Error getting AI health advice.")
+      console.error("Error fetching response:", error);
+      setResponse("Error getting AI health advice.");
     }
 
     setLoading(false)
@@ -147,9 +150,9 @@ export default function HealthCheck() {
                   </div>
                 </div>
                 <div className="p-4 sm:p-6 bg-dark text-white rounded-lg w-full max-h-60 sm:max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
-                  <h2 className="text-base sm:text-lg md:text-xl font-semibold pb-3 sm:pb-5">
+                  {/* <h2 className="text-base sm:text-lg md:text-xl font-semibold pb-3 sm:pb-5">
                     <strong>Detailed Response</strong>
-                  </h2>
+                  </h2> */}
                   <div className="text-xs sm:text-sm md:text-base whitespace-pre-wrap">{summary}</div>
                 </div>
               </div>
