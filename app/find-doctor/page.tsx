@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import L from "leaflet"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { Search } from "lucide-react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 
 const GEOAPIFY_API_KEY = "654ee2fb81ac4e598a626a3edd9a5860"
 
@@ -24,6 +24,27 @@ interface DoctorMarker {
 function LeafletMap({ condition, location, setDoctorMarkers, setIsLoading }: { condition: string; location: string; setDoctorMarkers: (doctors: DoctorMarker[]) => void; setIsLoading: (loading: boolean) => void }) {
   const mapRef = useRef<HTMLDivElement>(null)
   const leafletMap = useRef<any>(null)
+  const [L, setL] = useState<any>(null)
+
+  // Dynamically import Leaflet only on client side
+  useEffect(() => {
+    const loadLeaflet = async () => {
+      if (typeof window !== 'undefined') {
+        const leaflet = await import('leaflet')
+        
+        // Fix for Leaflet marker icons
+        delete (leaflet.Icon.Default.prototype as any)._getIconUrl
+        leaflet.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        })
+        
+        setL(leaflet.default)
+      }
+    }
+    loadLeaflet()
+  }, [])
 
   const getDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
     const toRad = (value: number) => (value * Math.PI) / 180
@@ -38,6 +59,8 @@ function LeafletMap({ condition, location, setDoctorMarkers, setIsLoading }: { c
   }
 
   const fetchNearbyDoctors = async (lat: number, lng: number, searchTerm: string) => {
+    if (!L) return
+    
     try {
       setIsLoading(true)
       
@@ -133,7 +156,7 @@ function LeafletMap({ condition, location, setDoctorMarkers, setIsLoading }: { c
       console.log(`Found ${sortedDoctors.length} unique healthcare facilities`)
       
       // Add markers to map
-      if (leafletMap.current && sortedDoctors.length > 0) {
+      if (leafletMap.current && L && sortedDoctors.length > 0) {
         sortedDoctors.forEach((doctor: any) => {
           const marker = L.marker([doctor.lat, doctor.lng]).addTo(leafletMap.current)
           marker.bindPopup(`<b>${doctor.name}</b><br>${doctor.address}<br>${doctor.distance.toFixed(2)} km away`)
@@ -147,7 +170,7 @@ function LeafletMap({ condition, location, setDoctorMarkers, setIsLoading }: { c
   }
 
   useEffect(() => {
-    if (!location) return
+    if (!location || !L) return
     
     // Parse location - if it's coordinates, use directly
     if (location.includes(',')) {
@@ -175,10 +198,10 @@ function LeafletMap({ condition, location, setDoctorMarkers, setIsLoading }: { c
         console.error('Geocoding error:', error)
         setIsLoading(false)
       })
-  }, [condition, location])
+  }, [condition, location, L])
 
   const initializeMap = (lat: number, lng: number) => {
-    if (mapRef.current) {
+    if (mapRef.current && L) {
       if (leafletMap.current) {
         try {
           leafletMap.current.remove()
