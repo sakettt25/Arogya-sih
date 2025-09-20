@@ -64,7 +64,7 @@ GramAarogya is built using modern, scalable technologies:
 1. Clone the repository
 ```bash
 git clone https://github.com/yourusername/gram-aarogya.git
-cd gram-aarogya
+cd arogya-sih
 ```
 
 2. Set up environment variables in a `.env` file:
@@ -145,7 +145,7 @@ Body:
 
 ## 🙏 Acknowledgments
 
-- aiXplain for AI model support & custom model creation
+- LLM model for chatbot
 - Google Maps API for location services
 
 ---
@@ -154,7 +154,7 @@ Body:
 
 ## 👤 Author
 
-For any questions or issues, please open an issue on GitHub: [@Siddharth Mishra](https://github.com/Sid3503)
+For any questions or issues, please open an issue on GitHub: [@Saket Saurav](https://github.com/sakettt25)
 
 ---
 
