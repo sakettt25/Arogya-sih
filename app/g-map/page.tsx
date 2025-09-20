@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import L from "leaflet"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 
@@ -42,6 +41,27 @@ export default function GMap() {
   const [selectedFacility, setSelectedFacility] = useState<string>("all")
   const mapRef = useRef<HTMLDivElement>(null)
   const leafletMap = useRef<any>(null)
+  const [L, setL] = useState<any>(null)
+
+  // Dynamically import Leaflet only on client side
+  useEffect(() => {
+    const loadLeaflet = async () => {
+      if (typeof window !== 'undefined') {
+        const leaflet = await import('leaflet')
+        
+        // Fix for Leaflet marker icons
+        delete (leaflet.Icon.Default.prototype as any)._getIconUrl
+        leaflet.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        })
+        
+        setL(leaflet.default)
+      }
+    }
+    loadLeaflet()
+  }, [])
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -60,7 +80,7 @@ export default function GMap() {
   }, [])
 
   useEffect(() => {
-    if (!location) return
+    if (!location || !L) return
     fetchNearbyPlaces(location.lat, location.lng, selectedFacility)
     // Render map
     if (mapRef.current) {
@@ -90,7 +110,7 @@ export default function GMap() {
         leafletMap.current = null
       }
     }
-  }, [location, selectedFacility])
+  }, [location, selectedFacility, L])
 
   // Filtered places based on filterTerm
   const filteredPlaces = places
@@ -136,7 +156,7 @@ export default function GMap() {
         }).sort((a: any, b: any) => a.distance - b.distance)
         setPlaces(sortedPlaces)
         // Add markers to map
-        if (leafletMap.current) {
+        if (leafletMap.current && L) {
           sortedPlaces.forEach((place: any) => {
             const marker = L.marker([place.lat, place.lng]).addTo(leafletMap.current)
             marker.bindPopup(`<b>${place.name}</b><br>${place.vicinity}`)
@@ -159,7 +179,7 @@ export default function GMap() {
       }).sort((a: any, b: any) => a.distance - b.distance)
       setPlaces(sortedPlaces)
       // Add markers to map
-      if (leafletMap.current) {
+      if (leafletMap.current && L) {
         sortedPlaces.forEach((place: any) => {
           const marker = L.marker([place.lat, place.lng]).addTo(leafletMap.current)
           marker.bindPopup(`<b>${place.name}</b><br>${place.vicinity}`)
