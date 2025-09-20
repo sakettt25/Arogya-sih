@@ -54,14 +54,14 @@ export default function Footer() {
             <h3 className="text-sm font-medium">Connect</h3>
             <div className="flex space-x-4">
               <Link
-                href="https://github.com/Sid3503"
+                href="https://github.com/sakettt25"
                 className="text-muted-foreground transition-colors hover:text-primary"
               >
                 <Github className="h-5 w-5" />
                 <span className="sr-only">GitHub</span>
               </Link>
               <Link
-                href="https://www.linkedin.com/in/siddharth-mishra-0a5227228/"
+                href="https://www.linkedin.com/in/sakettt25/"
                 className="text-muted-foreground transition-colors hover:text-primary"
               >
                 <Linkedin className="h-5 w-5" />
