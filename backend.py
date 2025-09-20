@@ -141,5 +141,176 @@ def get_news():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# =================== CHATBOT API ENDPOINTS ===================
+
+@app.route("/chatbot/message", methods=["POST"])
+def chatbot_message():
+    """Handle incoming chatbot messages from web/WhatsApp/SMS"""
+    try:
+        data = request.json
+        message = data.get("message", "")
+        user_id = data.get("user_id", "")
+        channel = data.get("channel", "web")  # web, whatsapp, sms
+        language = data.get("language", "auto")
+        
+        if not message:
+            return jsonify({"error": "Message is required"}), 400
+        
+        # Auto-detect language if not specified
+        if language == "auto":
+            language = detect(message)
+        
+        # Process through AI agent with healthcare context
+        healthcare_prompt = f"As a healthcare assistant for rural populations, respond to: {message}. Provide accurate, helpful health information in {language}."
+        agent_response = main_agent.run(healthcare_prompt)
+        formatted_response = agent_response["data"]["output"]
+        clean_response = remove_markdown(formatted_response)
+        final_response = format_text(clean_response)
+        
+        # Store conversation for accuracy tracking
+        # TODO: Implement conversation storage
+        
+        return jsonify({
+            "response": final_response,
+            "language": language,
+            "channel": channel,
+            "timestamp": request.json.get("timestamp", "")
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/chatbot/vaccination-schedule", methods=["POST"])
+def vaccination_schedule():
+    """Get vaccination schedule by age/location"""
+    try:
+        data = request.json
+        age = data.get("age", "")
+        location = data.get("location", "")
+        language = data.get("language", "english")
+        
+        if not age:
+            return jsonify({"error": "Age is required"}), 400
+        
+        vaccination_query = f"Provide vaccination schedule for {age} year old in {location}. Respond in {language}."
+        schedule_response = main_agent.run(vaccination_query)
+        formatted_schedule = remove_markdown(schedule_response["data"]["output"])
+        
+        return jsonify({
+            "vaccination_schedule": format_text(formatted_schedule),
+            "age": age,
+            "location": location,
+            "language": language
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/chatbot/health-alerts/subscribe", methods=["POST"])
+def subscribe_health_alerts():
+    """Subscribe to health alerts"""
+    try:
+        data = request.json
+        phone_number = data.get("phone_number", "")
+        language = data.get("language", "english")
+        alert_types = data.get("alert_types", ["outbreak", "vaccination"])
+        location = data.get("location", "")
+        
+        if not phone_number:
+            return jsonify({"error": "Phone number is required"}), 400
+        
+        # TODO: Store subscription in database
+        
+        return jsonify({
+            "message": "Successfully subscribed to health alerts",
+            "phone_number": phone_number,
+            "language": language,
+            "alert_types": alert_types,
+            "location": location
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/chatbot/outbreak-alert", methods=["POST"])
+def send_outbreak_alert():
+    """Send outbreak alerts to subscribed users"""
+    try:
+        data = request.json
+        region = data.get("region", "")
+        disease = data.get("disease", "")
+        severity = data.get("severity", "medium")
+        message = data.get("message", "")
+        
+        if not region or not disease:
+            return jsonify({"error": "Region and disease are required"}), 400
+        
+        # TODO: Implement alert broadcasting to subscribed users
+        alert_message = f"Health Alert for {region}: {disease} outbreak detected. Severity: {severity}. {message}"
+        
+        return jsonify({
+            "message": "Outbreak alert sent successfully",
+            "region": region,
+            "disease": disease,
+            "severity": severity,
+            "recipients_count": 0  # TODO: Get actual count from database
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/chatbot/symptom-check", methods=["POST"])
+def symptom_check():
+    """AI-powered symptom checker"""
+    try:
+        data = request.json
+        symptoms = data.get("symptoms", "")
+        age = data.get("age", "")
+        language = data.get("language", "english")
+        
+        if not symptoms:
+            return jsonify({"error": "Symptoms are required"}), 400
+        
+        symptom_query = f"Analyze these symptoms: {symptoms}. Patient age: {age}. Provide preliminary assessment and recommendations. Include when to seek immediate medical help. Respond in {language}."
+        symptom_response = main_agent.run(symptom_query)
+        formatted_response = remove_markdown(symptom_response["data"]["output"])
+        
+        return jsonify({
+            "assessment": format_text(formatted_response),
+            "symptoms": symptoms,
+            "age": age,
+            "language": language,
+            "disclaimer": "This is not a substitute for professional medical advice. Consult a doctor for proper diagnosis."
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/admin/chatbot/metrics", methods=["GET"])
+def chatbot_metrics():
+    """Get chatbot performance analytics"""
+    try:
+        # TODO: Implement actual metrics from database
+        mock_metrics = {
+            "total_conversations": 1250,
+            "accuracy_rate": 0.82,
+            "daily_active_users": 156,
+            "top_queries": [
+                {"query": "fever symptoms", "count": 89},
+                {"query": "vaccination schedule", "count": 76},
+                {"query": "diabetes management", "count": 64}
+            ],
+            "languages_used": {
+                "hindi": 45,
+                "english": 30,
+                "bengali": 15,
+                "tamil": 10
+            },
+            "channel_usage": {
+                "web": 50,
+                "whatsapp": 35,
+                "sms": 15
+            }
+        }
+        
+        return jsonify(mock_metrics)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

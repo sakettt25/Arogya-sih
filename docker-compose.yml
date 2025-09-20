@@ -1,0 +1,283 @@
+# Docker Compose Configuration for GramAarogya Multilingual Chatbot
+# Complete development and production environment setup
+
+version: '3.8'
+
+services:
+  # =============================================================================
+  # Main Application (Flask Backend + Next.js Frontend)
+  # =============================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gramarogya-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"  # Next.js frontend
+      - "5000:5000"  # Flask backend
+    environment:
+      - NODE_ENV=production
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/gramarogya
+      - REDIS_URL=redis://redis:6379/0
+      - RASA_ENDPOINT=http://rasa:5005
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./backups:/app/backups
+    depends_on:
+      - postgres
+      - redis
+      - rasa
+    networks:
+      - gramarogya-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =============================================================================
+  # Rasa NLP Server
+  # =============================================================================
+  rasa:
+    image: rasa/rasa:3.6.0
+    container_name: gramarogya-rasa
+    restart: unless-stopped
+    ports:
+      - "5005:5005"  # Rasa API
+      - "5055:5055"  # Rasa Actions
+    volumes:
+      - ./chatbot:/app
+    command: >
+      bash -c "rasa train --domain domain.yml --config config.yml --data data/ &&
+               rasa run --enable-api --cors '*' --port 5005"
+    networks:
+      - gramarogya-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5005/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =============================================================================
+  # PostgreSQL Database
+  # =============================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: gramarogya-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: gramarogya
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - gramarogya-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =============================================================================
+  # Redis Cache and Session Store
+  # =============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: gramarogya-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass redispassword
+    volumes:
+      - redis_data:/data
+    networks:
+      - gramarogya-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redispassword", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =============================================================================
+  # Nginx Reverse Proxy and Load Balancer
+  # =============================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: gramarogya-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/ssl:/etc/nginx/ssl
+    depends_on:
+      - app
+    networks:
+      - gramarogya-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =============================================================================
+  # Monitoring and Analytics
+  # =============================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: gramarogya-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    networks:
+      - gramarogya-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: gramarogya-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./docker/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - gramarogya-network
+
+  # =============================================================================
+  # Background Job Processor
+  # =============================================================================
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gramarogya-celery
+    restart: unless-stopped
+    command: celery -A app.celery worker --loglevel=info
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - gramarogya-network
+
+  # =============================================================================
+  # Celery Beat Scheduler (for periodic tasks)
+  # =============================================================================
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gramarogya-celery-beat
+    restart: unless-stopped
+    command: celery -A app.celery beat --loglevel=info
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - gramarogya-network
+
+  # =============================================================================
+  # Log Aggregation
+  # =============================================================================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+    container_name: gramarogya-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - gramarogya-network
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.8.0
+    container_name: gramarogya-logstash
+    restart: unless-stopped
+    volumes:
+      - ./docker/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./logs:/app/logs
+    depends_on:
+      - elasticsearch
+    networks:
+      - gramarogya-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.8.0
+    container_name: gramarogya-kibana
+    restart: unless-stopped
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - gramarogya-network
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  gramarogya-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
